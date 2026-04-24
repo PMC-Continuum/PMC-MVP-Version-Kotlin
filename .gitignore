@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SECRETS & API KEYS — never commit these
+# ─────────────────────────────────────────────────────────────────────────────
+local.properties
+.env
+.env.local
+.env.*
+# *.properties covers anything like keystore.properties, signing.properties
+# but we keep gradle/wrapper/gradle-wrapper.properties
+*.properties
+!gradle/wrapper/gradle-wrapper.properties
+
+# Firebase / Google Services
+google-services.json
+GoogleService-Info.plist
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GRADLE
+# ─────────────────────────────────────────────────────────────────────────────
+.gradle/
+**/build/
+*.hprof
+.kotlin/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ANDROID
+# ─────────────────────────────────────────────────────────────────────────────
+*.apk
+*.aab
+*.ap_
+*.keystore
+*.jks
+/androidApp/release/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# iOS / Xcode
+# ─────────────────────────────────────────────────────────────────────────────
+iosApp/.build/
+iosApp/Pods/
+iosApp/Podfile.lock
+# Keep the main xcworkspace if it exists; ignore auto-generated extras
+iosApp/*.xcworkspace/xcuserdata/
+iosApp/*.xcodeproj/xcuserdata/
+iosApp/*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM/
+xcuserdata/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KOTLIN / INTELLIJ / ANDROID STUDIO
+# ─────────────────────────────────────────────────────────────────────────────
+.idea/
+# Keep run configurations if you want to share them:
+!.idea/runConfigurations/
+*.iml
+out/
+captures/
+*.orig
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WEB / JS / NODE
+# ─────────────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# ─────────────────────────────────────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
