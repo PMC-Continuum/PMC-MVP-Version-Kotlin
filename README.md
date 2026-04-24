@@ -1,71 +1,118 @@
-# PMC-MVP-Version-Kotlin
+# Continuum (Kotlin Multiplatform)
 
-## Descripción
-Este repositorio contiene una aplicación Android desarrollada en Kotlin bajo un enfoque MVP (Model–View–Presenter). El objetivo del proyecto es servir como base de referencia para una app modular, testeable y fácil de mantener, separando responsabilidades entre la capa de vista, presentación y acceso a datos.
+Continuum es una plataforma de monitoreo clínico para pacientes con enfermedades crónicas en Colombia. El objetivo es facilitar el registro diario de síntomas (con entrada por voz), el análisis de tendencias y un flujo de emergencia (SOS) que genere un resumen clínico útil para atención oportuna.
 
-## Tecnologías
-- Kotlin
-- Android SDK
-- Gradle
-- (Completar: Retrofit/OkHttp, Room, Coroutines, etc. según lo que use el proyecto)
+Este repositorio está migrando hacia una base **Kotlin Multiplatform (KMP)** con UI en **Compose Multiplatform**, compartiendo la lógica de negocio en `shared/` y apuntando a **Android, iOS y Web**.
 
-## Requisitos
-- Android Studio (recomendado: versión estable reciente)
-- JDK (indicar versión exacta cuando la confirmemos)
-- SDK de Android instalado (indicar compileSdk/targetSdk cuando lo confirmemos)
-- Gradle (incluido vía Gradle Wrapper)
+## Alcance y módulos
+
+El proyecto está organizado bajo una estructura KMP con módulos para cada plataforma y un módulo compartido:
+
+- `androidApp/`: aplicación Android (Compose).
+- `iosApp/`: proyecto iOS (Xcode) consumiendo el framework generado por KMP.
+- `webApp/`: app Web con Compose Multiplatform (target JS).
+- `shared/`: código compartido (dominio, datos, agentes, navegación, UI común).
+- `landing/`: landing pública en HTML/CSS/JS (sin build), con formulario de lista de espera.
+
+## Stack técnico (no negociable)
+
+- **UI**: Kotlin Multiplatform + Compose Multiplatform (Android, iOS, Web)
+- **Backend**: Supabase (Auth, Postgres, Realtime, Storage)
+- **Agentes/IA**: Anthropic Claude (`claude-sonnet-4-5`) consumido desde Ktor
+- **Persistencia local**: SQLDelight (enfoque offline-first)
+- **Networking**: Ktor Client (en `commonMain`)
+- **Navegación**: Decompose (en `commonMain`)
+- **DI**: Koin (en `commonMain`)
+- **Preferencias**: Multiplatform Settings
+- **Build**: Gradle Version Catalog (`gradle/libs.versions.toml`)
+
+## Estructura esperada del código
+
+La base del proyecto se está implementando con el siguiente layout (resumen):
+
+- `shared/src/commonMain/kotlin/com/continuum/`
+  - `config/`: configuración de entorno (`AppConfig.kt`)
+  - `di/`: módulo de Koin (`AppModule.kt`)
+  - `domain/`: modelos, repositorios y casos de uso
+  - `data/`: servicios remotos (Supabase, Claude), repositorios, y capa local (SQLDelight)
+  - `agent/`: agentes de extracción clínica, tendencias y contexto SOS
+  - `presentation/`: navegación (Decompose), ViewModels (StateFlow) y pantallas Compose
+  - `platform/`: `expect/actual` (por ahora, grabación/transcripción de audio)
+
+## Backend (Supabase)
+
+El backend usa Supabase con tablas para usuarios, entradas clínicas, eventos SOS, tendencias de salud y una lista de espera pública.
+
+- Migración inicial: `shared/supabase/migrations/001_initial.sql`
+- RLS (Row Level Security): aplicado para `clinical_entries`, `sos_events` y `health_trends`, asegurando que cada usuario solo pueda acceder a sus datos.
+
+## Offline-first con SQLDelight
+
+Los registros clínicos se escriben primero en la base local y se sincronizan con Supabase cuando hay conectividad.
+
+- Esquema SQLDelight: `shared/src/commonMain/sqldelight/com/continuum/db/ContinuumDatabase.sq`
+
+## Agentes de IA
+
+En `shared/src/commonMain/kotlin/com/continuum/agent/` se definen tres piezas principales:
+
+- `ClinicalSieveAgent`: toma una transcripción (español) y devuelve síntomas, severidad (1–10), datos estructurados y un resumen clínico.
+- `TrendAnalysisAgent`: analiza el histórico reciente y devuelve patrones de empeoramiento/mejoría, anomalías y una recomendación.
+- `SOSContextAgent`: genera un resumen clínico conciso para emergencias (en español), incluyendo urgencia y contexto relevante.
+
+Los llamados se hacen a la API de Anthropic desde Ktor (`ClaudeService`).
+
+## Reglas de implementación
+
+- La lógica de negocio vive en `commonMain`. Lo específico de plataforma se limita a `expect/actual` (por ejemplo, `AudioRecorder`).
+- Estado de UI con `StateFlow` (no se usa LiveData).
+- Todas las llamadas de red son `suspend`.
+- Manejo de errores con `Result<T>` (tipos `Success` y `Error`).
+- Serialización con `kotlinx.serialization`.
+- No se deben commitear llaves de Anthropic ni credenciales.
+
+## Configuración de entorno
+
+Por seguridad, las llaves no deben quedar en el repositorio.
+
+- Ejemplo de variables: `.env.example`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
+  - `ANTHROPIC_API_KEY`
+
+Asegúrate de tener en `.gitignore`:
+
+- `local.properties`
+- `.env`
+- `*.keystore`
+
+> Nota: En producción, la idea es leer claves desde `local.properties` (Android), `Info.plist` (iOS) y variables de entorno (Web).
 
 ## Cómo correr el proyecto
 
-### 1) Clonar el repositorio
+### Requisitos
+
+- Android Studio (versión estable)
+- JDK 17
+- SDK de Android instalado
+- Gradle Wrapper (incluido)
+
+### Android
+
 ```bash
-git clone https://github.com/PMC-Continuum/PMC-MVP-Version-Kotlin.git
-cd PMC-MVP-Version-Kotlin
+./gradlew :androidApp:assembleDebug
 ```
 
-### 2) Abrir en Android Studio
-1. Abrir Android Studio
-2. Seleccionar **Open** y elegir la carpeta del proyecto
-3. Esperar a que finalice la sincronización de Gradle
+### Shared (compilación de commonMain)
 
-### 3) Configuración (si aplica)
-Dependiendo del entorno, puede ser necesario configurar:
-- Variables en `local.properties`
-- Archivos `google-services.json` (si hay Firebase)
-- `BASE_URL` / endpoints (si consume APIs)
-- Llaves o credenciales (no se deben commitear)
-
-> Nota: Cuando me compartas los `build.gradle` y configuración, documentaré exactamente qué se necesita y dónde.
-
-### 4) Ejecutar
-- Conectar un dispositivo físico con Depuración USB habilitada, o iniciar un emulador
-- Elegir el target y ejecutar con **Run**
-
-## Build desde terminal (opcional)
 ```bash
-./gradlew clean assembleDebug
+./gradlew :shared:compileKotlinMetadata
 ```
 
-Para correr tests:
-```bash
-./gradlew test
-```
+## Estado actual
 
-## Estructura del proyecto
-(Se completa con la estructura real del repo; ejemplo orientativo)
+El repositorio está consolidando el scaffold KMP y la implementación base (dominio, datos, agentes, navegación y pantallas). La referencia de versiones se maneja desde `gradle/libs.versions.toml`.
 
-- `app/`
-  - `src/main/java/...`
-    - `view/` (Activities/Fragments)
-    - `presenter/`
-    - `model/` o `data/`
-    - `network/` (si aplica)
-  - `src/main/res/`
-- `gradle/`
-- `build.gradle`
-- `settings.gradle`
+## Licencia
 
-## Arquitectura (MVP)
-- **View**: muestra información y delega eventos del usuario.
-- **Presenter**: contiene la lógica de presentación, coordina casos de uso y actualiza la View.
-- **Model/Data**: repositorios, fuentes de datos, DTOs, persistencia, etc.
+Pendiente de definir.
