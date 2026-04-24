@@ -1,4 +1,9 @@
 plugins {
+    // composeMultiplatform must come first so LifecycleBasePlugin registers 'clean'
+    // in webApp before KotlinJsBrowserPlugin applies BasePlugin (Gradle 8.9 fix).
+    // Root tasks.register("clean") was removed to allow NodeJsRootPlugin to own
+    // the root 'clean' task — that is what unblocked this plugin order.
+    alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeCompiler)
 }
@@ -16,13 +21,10 @@ kotlin {
     sourceSets {
         jsMain.dependencies {
             implementation(project(":shared"))
-            // Explicit Compose coords (composeMultiplatform plugin not applied here to avoid
-            // LifecycleBasePlugin duplicate-registration conflict on pure-JS KMP modules)
-            val composeVer = libs.versions.composeMultiplatform.get()
-            implementation("org.jetbrains.compose.runtime:runtime:$composeVer")
-            implementation("org.jetbrains.compose.foundation:foundation:$composeVer")
-            implementation("org.jetbrains.compose.material3:material3:$composeVer")
-            implementation("org.jetbrains.compose.ui:ui:$composeVer")
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
             implementation(libs.decompose.core)
             implementation(libs.essenty.lifecycle)
             implementation(libs.koin.core)
