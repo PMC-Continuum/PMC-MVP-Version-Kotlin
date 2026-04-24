@@ -3,16 +3,17 @@ package com.continuum.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.continuum.android.ui.navigation.AppNavGraph
-import com.continuum.android.ui.theme.ContinuumTheme
+import com.arkivanov.decompose.defaultComponentContext
+import com.continuum.App
+import com.continuum.presentation.navigation.DefaultRootComponent
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            ContinuumTheme {
-                AppNavGraph()
-            }
-        }
+        val root = DefaultRootComponent(
+            componentContext = defaultComponentContext(),
+            userId = null
+        )
+        setContent { App(root) }
     }
 }

@@ -1,79 +1,67 @@
 package com.continuum
 
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import kotlinx.coroutines.launch
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
-import com.continuum.di.appModule
-import com.continuum.presentation.dashboard.DashboardScreen
-import com.continuum.presentation.dashboard.DashboardViewModel
-import com.continuum.presentation.home.HomeScreen
-import com.continuum.presentation.home.HomeViewModel
 import com.continuum.presentation.navigation.DefaultRootComponent
 import com.continuum.presentation.navigation.RootComponent
-import com.continuum.presentation.sos.SOSScreen
-import com.continuum.presentation.sos.SOSViewModel
-import com.continuum.presentation.voiceentry.VoiceEntryScreen
-import com.continuum.presentation.voiceentry.VoiceEntryViewModel
-import org.koin.compose.KoinApplication
-import org.koin.compose.koinInject
+import com.continuum.ui.screens.RoleSelectorScreen
+import com.continuum.ui.screens.doctor.DoctorApp
+import com.continuum.ui.screens.elderly.ElderlyApp
+import com.continuum.ui.screens.family.FamilyApp
+import com.continuum.ui.screens.patient.PatientApp
+import com.continuum.ui.theme.ContinuumTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun App(root: DefaultRootComponent) {
-    KoinApplication(application = { modules(appModule) }) {
-        MaterialTheme {
-            RootContent(root)
-        }
+    ContinuumTheme {
+        RootContent(root)
     }
 }
 
 @Composable
 private fun RootContent(root: DefaultRootComponent) {
+    val scope = rememberCoroutineScope()
     Children(
         stack = root.stack,
         animation = stackAnimation(slide())
     ) { child ->
         when (child.instance) {
+            is RootComponent.Child.RoleSelector -> {
+                RoleSelectorScreen(
+                    onPatient = { root.navigateTo(DefaultRootComponent.Config.PatientApp) },
+                    onDoctor  = { root.navigateTo(DefaultRootComponent.Config.DoctorApp) },
+                    onFamily  = { root.navigateTo(DefaultRootComponent.Config.FamilyApp) },
+                    onElderly = { root.navigateTo(DefaultRootComponent.Config.ElderlyApp) }
+                )
+            }
+            is RootComponent.Child.PatientApp -> {
+                PatientApp(onChangeRole = { root.replaceWith(DefaultRootComponent.Config.RoleSelector) })
+            }
+            is RootComponent.Child.DoctorApp -> {
+                DoctorApp(onChangeRole = { root.replaceWith(DefaultRootComponent.Config.RoleSelector) })
+            }
+            is RootComponent.Child.FamilyApp -> {
+                FamilyApp(onChangeRole = { root.replaceWith(DefaultRootComponent.Config.RoleSelector) })
+            }
+            is RootComponent.Child.ElderlyApp -> {
+                ElderlyApp(onChangeRole = { root.replaceWith(DefaultRootComponent.Config.RoleSelector) })
+            }
             is RootComponent.Child.Landing -> {
                 val supabase = org.koin.compose.koinInject<com.continuum.data.remote.SupabaseService>()
-                val scope = rememberCoroutineScope()
                 com.continuum.presentation.landing.LandingScreen(
                     onJoinPilot = { name, condition, city, email ->
-                        scope.launch {
-                            supabase.addToWaitlist(email, name, condition, city)
-                        }
+                        scope.launch { supabase.addToWaitlist(email, name, condition, city) }
                     }
                 )
             }
-            is RootComponent.Child.Home -> {
-                val vm: HomeViewModel = koinInject()
-                HomeScreen(
-                    viewModel = vm,
-                    onNavigateToVoiceEntry = {
-                        root.navigateTo(DefaultRootComponent.Config.VoiceEntry)
-                    },
-                    onNavigateToDashboard = {
-                        root.navigateTo(DefaultRootComponent.Config.Dashboard)
-                    },
-                    onNavigateToSOS = {
-                        root.navigateTo(DefaultRootComponent.Config.SOS)
-                    }
-                )
-            }
-            is RootComponent.Child.VoiceEntry -> {
-                val vm: VoiceEntryViewModel = koinInject()
-                VoiceEntryScreen(viewModel = vm, onDone = { root.goBack() })
-            }
-            is RootComponent.Child.Dashboard -> {
-                val vm: DashboardViewModel = koinInject()
-                DashboardScreen(viewModel = vm)
-            }
-            is RootComponent.Child.SOS -> {
-                val vm: SOSViewModel = koinInject()
-                SOSScreen(viewModel = vm, onBack = { root.goBack() })
-            }
+            is RootComponent.Child.Home,
+            is RootComponent.Child.VoiceEntry,
+            is RootComponent.Child.Dashboard,
+            is RootComponent.Child.SOS -> {}
         }
     }
 }
