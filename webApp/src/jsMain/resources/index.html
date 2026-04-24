@@ -13,19 +13,18 @@
 <body>
   <canvas id="ComposeTarget"></canvas>
 
-  <script>
-    // Pre-define Module BEFORE skiko.js loads so Emscripten picks up our
-    // onRuntimeInitialized callback. When skiko.wasm is fully ready, we
-    // dynamically inject webApp.js — this guarantees all Skiko native
-    // functions (org_jetbrains_skia_*) exist before Compose touches them.
-    window.Module = {
-      onRuntimeInitialized: function () {
-        var s = document.createElement('script');
-        s.src = 'webApp.js';
-        document.body.appendChild(s);
-      }
-    };
+  <script type="module">
+    // skiko.mjs uses a top-level `await loadSkikoWASM()` so this dynamic
+    // import suspends until the WASM runtime is fully initialised.
+    // We then copy every export (org_jetbrains_skia_*, GL, etc.) onto
+    // globalThis so that skiko-kjs.js — bundled inside webApp.js — can
+    // reference them as plain globals, which is what Kotlin/JS expects.
+    const { loadedWasm } = await import('./skiko.mjs');
+    Object.assign(globalThis, loadedWasm);
+
+    const s = document.createElement('script');
+    s.src = 'webApp.js';
+    document.body.appendChild(s);
   </script>
-  <script src="skiko.js"></script>
 </body>
 </html>
