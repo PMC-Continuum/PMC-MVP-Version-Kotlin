@@ -15,6 +15,8 @@ androidTargetSdk = "34"
 androidxActivityCompose = "1.9.2"
 androidxLifecycle = "2.8.6"
 androidxCore = "1.13.1"
+androidxNavigationCompose = "2.8.0"
+composeUiGoogleFonts = "1.7.8"
 
 # Navigation / DI
 decompose = "3.2.0"
@@ -43,6 +45,8 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidxLifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
+compose-ui-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts", version.ref = "composeUiGoogleFonts" }
 
 # Decompose
 decompose-core = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
